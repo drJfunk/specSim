@@ -1,5 +1,5 @@
-import astropy.io.fits pf
-from numpy import zeros
+import astropy.io.fits as pf
+from numpy import zeros, array, matrix
 
 class rsp(object):
 
@@ -12,6 +12,7 @@ class rsp(object):
         self.chanData = rspFile[1].data
         self.numEnergyBins = rspFile[2].header['NUMEBINS']
         self.numDetChans = rspFile[2].header['DETCHANS']
+        self.det = rspFile[0].header['DETNAM']
         
         #Main component of object
         self.drm = zeros((self.numEnergyBins, self.numDetChans))
@@ -40,7 +41,8 @@ class rsp(object):
 
                 self.drm[i,fc-1:fc+nc]=mData["MATRIX"][i][colIndx:colIndx+nc]
                 colIndx+=nc
-        
+        self.drm=matrix(self.drm)
+        #self.drm=self.drm.transpose()
         del mData
 
         

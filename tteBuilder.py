@@ -15,20 +15,20 @@ class tteBuilder(object):
         self.det = det
         self.evts = evts
         self.chans = chans
-        self.simInfo  =simInfo
-        self.ebounds = npload(eboundDict[det]+'_bounds.npy')
+        self.tz, self.tStart, self.tStop = simInfo
+        self.trigT = self.tz
+        self.ebounds = npload(eboundDict[det]+'_ebounds.npy')
 
+
+        self._CreatePrimaryHeader()
+        self._MakeEboundsEXT()
+        self._MakeEventsEXT()
+        self._MakeGTI()
+        self._MakeHDUList()
         
 
 
-
-
-        self.bgo = False
-        self.nai=True
-
-
     def _CreatePrimaryHeader(self):
-
 
         primaryHeader = pf.Header()
 
@@ -117,17 +117,17 @@ class tteBuilder(object):
         self.eboundshdu = tbhdu
 
 
-    def _MakeEventsEXT(self,events,channels):
+    def _MakeEventsEXT(self):
 
-        if len(events) != len(channels):
+        if len(self.evts) != len(self.chans):
             print "channels and events are not the same length!!!"
             return
 
        
         tz = 243216766.613542
 
-        pha  = pf.Column(name= 'PHA     ', format='1I', unit='none', array=channels)
-        time = pf.Column(name= 'TIME    ', format='1D', unit='s       ', array=events-tz)
+        pha  = pf.Column(name= 'PHA     ', format='1I', unit='none', array=self.chans)
+        time = pf.Column(name= 'TIME    ', format='1D', unit='s       ', array=self.evts-self.tz)
       
         
 
@@ -185,8 +185,8 @@ class tteBuilder(object):
 
         tz = 243216766.613542
 
-        tstart = pf.Column(name='START   ', format='1D', unit='s', array=[243216740.670344-tz])
-        tstop =  pf.Column(name='STOP    ', format='1D', unit='s     ', array=[243217067.27205601-tz])
+        tstart = pf.Column(name='START   ', format='1D', unit='s', array=[self.tStart-tz])
+        tstop =  pf.Column(name='STOP    ', format='1D', unit='s     ', array=[self.tStop-tz])
        
 
 
