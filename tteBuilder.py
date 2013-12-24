@@ -95,7 +95,7 @@ class tteBuilder(object):
         header["MJDREFF"] = 7.428703703703703E-4
         header["TSTART"] = self.tStart
         header["TSTOP"] = self.tStop
-        header["DATATYPE"] = 'TTE     '
+       
         header["TRIGTIME"] = self.trigT
         header["OBJECT"] = 'GRB000000000'
         header["RADECSYS"] = 'FK5     '
@@ -124,7 +124,7 @@ class tteBuilder(object):
             return
 
        
-        tz = 243216766.613542
+        
 
         pha  = pf.Column(name= 'PHA     ', format='1I', unit='none', array=self.chans)
         time = pf.Column(name= 'TIME    ', format='1D', unit='s       ', array=self.evts-self.tz)
@@ -170,6 +170,8 @@ class tteBuilder(object):
         header["HDUCLASS"]  = 'OGIP    '
         header["HDUCLAS1"] = 'EVENTS  '
         header["EXTVER"] = 1
+        header["FIFO_END"] = self.tStart
+        header["FIFO_END"] = self.tStart
         header["CHECKSUM"] = 'PZaEQWTCPWZCPWZC'
         header["DATASUM"] = '         0'
 
@@ -183,10 +185,10 @@ class tteBuilder(object):
     def _MakeGTI(self):
         
 
-        tz = 243216766.613542
+        
 
-        tstart = pf.Column(name='START   ', format='1D', unit='s', array=[self.tStart-tz])
-        tstop =  pf.Column(name='STOP    ', format='1D', unit='s     ', array=[self.tStop-tz])
+        tstart = pf.Column(name='START   ', format='1D', unit='s', array=[self.tStart])
+        tstop =  pf.Column(name='STOP    ', format='1D', unit='s     ', array=[self.tStop])
        
 
 
@@ -210,7 +212,7 @@ class tteBuilder(object):
         header["MJDREFF"] = 7.428703703703703E-4
         header["TSTART"] = self.tStart
         header["TSTOP"] = self.tStop
-        header["DATATYPE"] = 'TTE     '
+        
         header["TRIGTIME"] = self.trigT
        
         header["TZERO1"]=self.tz
