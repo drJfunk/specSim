@@ -14,7 +14,7 @@ def PoissonRate(mean,timeBin,dt):
 
 class photonBuilder(object):
 
-    def __init__(self,tstart,tstop,dt,drm):
+    def __init__(self,tstart,tstop,dt,drm,intType='quad'):
 
         self.chans = arange(0,127,1)
         #self.events =  [[]]*128 #empty chans
@@ -22,6 +22,7 @@ class photonBuilder(object):
         self.chans = []
         self._CreateTime(tstart,tstop,dt)
         self.drm = drm
+        self.intType = intType
 
 
     def _EventsFromCounts(self,t):
@@ -89,7 +90,7 @@ class photonBuilder(object):
             
             tmpModel = lambda x: self.model(x, *self.params)
             
-            m2c = model2counts(self.drm, tmpModel)
+            m2c = model2counts(self.drm, tmpModel, self.intType)
 
             self.countSpec = m2c.counts
             self._EventsFromCounts(t)

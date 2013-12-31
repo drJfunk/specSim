@@ -37,7 +37,7 @@ class tteBuilder(object):
         primaryHeader["FILE-VER"] = '1.0.0'
         primaryHeader["TELESCOP"] = 'GLAST   '
         primaryHeader["INSTRUME"] = 'GBM     '
-        primaryHeader["DETNAM"] = 'NAI_03  '
+        primaryHeader["DETNAM"] = self.det
         primaryHeader["OBSERVER"] = 'Meegan  '
         primaryHeader["ORIGIN"] = 'GIOC    '
         primaryHeader["DATE"] = '2009-05-19T18:49:32'

@@ -18,6 +18,7 @@ class rsp(object):
         self.drm = zeros((self.numEnergyBins, self.numDetChans))
 
         self._ConstructDRM(rspFile)
+        self.binWidths = rspFile[1].data["E_MAX"]-rspFile[1].data["E_MIN"]
 
         rspFile.close()
 
