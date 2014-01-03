@@ -19,7 +19,12 @@ class lightCurveGen(object):
         self.sgnFlag=False
 
     def ConstructBackground(self,tstart,tstop,A,index):
+        '''
+        This constructs a power law background for the simulations
+        The amplitude and index as well as tstart and tstop are set here
+        The typlical GBM background has an index of -1.3.
 
+        '''
 
 
         bkg = bkGroundBuilder(tstart,tstop,self.dt,self.drm)
