@@ -26,6 +26,16 @@ def Band( x, A, Ep, alpha, beta):
         return band
 
 
+def BandSingle( x, A, Ep, alpha, beta):
+
+	if x < (alpha-beta)*Ep/(2+alpha):
+                return A*( power(x/100., alpha) * exp(-x*(2+alpha)/Ep) )
+        else:
+                return A* ( power( (alpha -beta)*Ep/(100.*(2+alpha)),alpha-beta)*exp(beta-alpha)*power(x/100.,beta))
+
+        
+
+
 
 
 def BlackBody(x,A,kT):
