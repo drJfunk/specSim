@@ -1,23 +1,43 @@
 from scipy.stats import uniform
 from scipy.integrate import quad, quadrature
-
+from numpy import linspace, arange, log
 
 class photonGen(object):
 
-    def __init__(self):
+    def __init__(self, bkgStart, bkgStop  ,sourceStart, sourceStop, emin, emax):
 
         self.srcEnergy = []
         self.bkgEnergy =[]
+        self.tStop = bkgStop
+        self.tStart = bkgStart
+        self.sourceStart = sourceStart
+        self.sourceStop = sourceStop
+        self.emin = emin
+        self.emax = emax
+
+
         #self.evts = []
 
 
 
-    def _specEvo(self, t, ene):
-        pass
+    
 
 
-    def _pulse(self, t):
-        pass
+    def SetEvolution(self,evo):
+        '''
+        Pas a fucntion of the form
+
+        f(energy,time) that defines the time and energy 
+        evolution of the pulse
+
+        '''
+        
+        self._specEvo = evo
+
+    def _IntegratePulse(self):
+
+        self._pulse = lambda t: quad(self._specEvo,self.emin,self.emax,args=(t))[0]
+
 
     def _nonHomoGen(self, t0, tMax, fmax):
         t=t0
@@ -29,6 +49,7 @@ class photonGen(object):
             if uniform.rvs() <= self._pulse(t)/fmax:
                 times.append(t)
         self.sourceTimes = times
+        
 
 
     def _homoGen(self, t0, tMax, rate):
@@ -41,7 +62,7 @@ class photonGen(object):
 
 
 
-    def _Sampler(func,fMax,xMin,xMax):
+    def _Sampler(self,func,fMax,xMin,xMax):
 
         flag = True
         while flag:
@@ -49,20 +70,21 @@ class photonGen(object):
 
             if  uniform.rvs(0,fMax) <= func(energyGuess):
                     flag = False
+        
         return energyGuess
 
 
     def _CreateSourceCurve(self):
 
 
-        t = linspace(self.sourceStart,self.sourceStop,.01)
+        t = arange(self.sourceStart,self.sourceStop,.001)
         p = map(self._pulse,t)
         maxFlux = max(p)
 
         self._nonHomoGen(self.sourceStart,self.sourceStop,maxFlux)
 
         for ti in self.sourceTimes:
-            b= lambda en: self._specEvo(ti,en)
+            b= lambda en: self._specEvo(en,ti)
             self.srcEnergy.append(self._Sampler(b,b(self.emin),self.emin,self.emax))
 
 
