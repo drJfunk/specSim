@@ -25,7 +25,7 @@ class photonGen(object):
 
     def SetEvolution(self,evo):
         '''
-        Pas a fucntion of the form
+        Pass a fucntion of the form
 
         f(energy,time) that defines the time and energy 
         evolution of the pulse
@@ -37,6 +37,7 @@ class photonGen(object):
     def _IntegratePulse(self):
 
         self._pulse = lambda t: quad(self._specEvo,self.emin,self.emax,args=(t))[0]
+        print "\n\nTime pulse created!!\n\n"
 
 
     def _nonHomoGen(self, t0, tMax, fmax):
@@ -49,6 +50,7 @@ class photonGen(object):
             if uniform.rvs() <= self._pulse(t)/fmax:
                 times.append(t)
         self.sourceTimes = times
+        print "There were %d photons generated.\nDistributing in energy\n\n"%len(self.sourceTimes)
         
 
 
@@ -76,13 +78,13 @@ class photonGen(object):
 
     def _CreateSourceCurve(self):
 
-
+        
         t = arange(self.sourceStart,self.sourceStop,.001)
         p = map(self._pulse,t)
         maxFlux = max(p)
 
         self._nonHomoGen(self.sourceStart,self.sourceStop,maxFlux)
-
+        
         for ti in self.sourceTimes:
             b= lambda en: self._specEvo(en,ti)
             self.srcEnergy.append(self._Sampler(b,b(self.emin),self.emin,self.emax))
