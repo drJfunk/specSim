@@ -20,7 +20,10 @@ class photonGen(object):
 
 
 
-    
+    def SetBkgParams(self,amp,index):
+
+        self.bkgAmp = amp
+        self.bkgIndex = index
 
 
     def SetEvolution(self,evo):
@@ -78,7 +81,8 @@ class photonGen(object):
 
     def _CreateSourceCurve(self):
 
-        
+        self._IntegratePulse()
+
         t = arange(self.sourceStart,self.sourceStop,.001)
         p = map(self._pulse,t)
         maxFlux = max(p)
@@ -89,9 +93,19 @@ class photonGen(object):
             b= lambda en: self._specEvo(en,ti)
             self.srcEnergy.append(self._Sampler(b,b(self.emin),self.emin,self.emax))
 
+    def _bkgSpec(self,ene):
+
+        return self.bkgAmp*(ene)**(self.bkgIndex)
+
+
+    def _IntegrateBkg(self):
+
+        self.bkgRate = quad(self._bkgSpec, self.emin,self.emax)[0]
 
 
     def _CreateBkgCurve(self):
+
+        self._IntegrateBkg()
 
         self._homoGen(self.tStart, self.tStop, self.bkgRate)
 
