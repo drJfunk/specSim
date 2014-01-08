@@ -1,6 +1,8 @@
 from scipy.stats import uniform
 from scipy.integrate import quad, quadrature
-from numpy import linspace, arange, log
+from numpy import linspace, arange
+from math import log
+from numba.random.random import uniform
 
 class photonGen(object):
 
@@ -48,9 +50,9 @@ class photonGen(object):
         times=[t0]
         while times[-1]<tMax:
         
-            t = t-(1/fmax)*log(uniform.rvs())
+            t = t-(1/fmax)*log(uniform(0.,1.))
         
-            if uniform.rvs() <= self._pulse(t)/fmax:
+            if uniform(0.,1.) <= self._pulse(t)/fmax:
                 times.append(t)
         self.sourceTimes = times
         print "There were %d photons generated.\nDistributing in energy\n\n"%len(self.sourceTimes)
@@ -61,7 +63,7 @@ class photonGen(object):
         t=t0
         times=[t0]
         while times[-1]<tMax:
-            times.append(times[-1]-(1/rate)*log(uniform.rvs()))
+            times.append(times[-1]-(1/rate)*log(uniform(0.,1.)))
         
         self.bkgTimes =times
 
@@ -71,9 +73,9 @@ class photonGen(object):
 
         flag = True
         while flag:
-            energyGuess = uniform.rvs(xMin,xMax-xMin)
+            energyGuess = uniform(xMin,xMax-xMin)
 
-            if  uniform.rvs(0,fMax) <= func(energyGuess):
+            if  uniform(0,fMax) <= func(energyGuess):
                     flag = False
         
         return energyGuess
@@ -83,7 +85,7 @@ class photonGen(object):
 
         self._IntegratePulse()
 
-        t = arange(self.sourceStart,self.sourceStop,.001)
+        t = arange(self.sourceStart,self.sourceStop,.01)
         p = map(self._pulse,t)
         maxFlux = max(p)
 
