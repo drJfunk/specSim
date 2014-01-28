@@ -1,5 +1,5 @@
 import astropy.io.fits as pf
-from numpy import zeros, array, matrix
+from numpy import zeros, array, matrix, abs
 import math
 
 class rsp(object):
@@ -9,7 +9,10 @@ class rsp(object):
 
         rspFile = pf.open(rspFileName)
     
-        angle = 67 #This is temporarily hardcoded and should be updated 
+        angle = rspFile[2].header["DET_ANG"] 
+        print "Read RSP file with angle: %lf"%angle
+        
+        
 
 
         self.chanData = rspFile[1].data
@@ -81,3 +84,12 @@ class rsp(object):
             self.geoArea = geoArea
             self.prob = self.drm/geoArea
             # print "Det: %s, Beta: %.1f
+    def _FindNearestPhotonBin(self, e):
+        ''' 
+       	Take an energy (e) and find return the 
+	corresponding column from the DRM which 
+	has been normalised by the geometric area
+	'''
+        
+        idx=(abs(self.photonE[0]-e)).argmin()
+        return self.prob[idx,:]
