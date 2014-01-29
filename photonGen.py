@@ -62,10 +62,21 @@ class photonGen(object):
         self.sourceStop = sourceStop
         self.emin = emin
         self.emax = emax
+        self.areaFrac = 1.
 
 
     
 
+
+    def SetAreaFraction(self, frac):
+        '''
+        Sets the fraction of the effective area to a BGO
+        detector so that the rate is modified.
+
+        '''
+
+        self.areaFrac = frac
+        print self.areaFrac
 
 
     def SetBkgParams(self,amp,index):
@@ -119,7 +130,7 @@ class photonGen(object):
         '''
 
 
-        self._pulse = lambda t: quad(self._specEvo,self.emin,self.emax,args=(t))[0]
+        self._pulse = lambda t: quad(self._specEvo,self.emin,self.emax,args=(t))[0]*self.areaFrac
         
 
 
@@ -141,7 +152,7 @@ class photonGen(object):
             if uniform(0.,1.) <= self._pulse(t)/fmax:
                 times.append(t)
         self.sourceTimes = times
-        print "There were %d photons generated.\nDistributing in energy\n\n"%len(self.sourceTimes)
+        print "There were %d photons generated.\nDistributing in energy"%len(self.sourceTimes)
         
 
 
@@ -154,14 +165,22 @@ class photonGen(object):
         self.bkgTimes =times
 
 
-    def _SamplerInv(self,func,xMin,xMax):
+    def _SamplerInv(self,xMin,xMax):
+        '''
+        Since the bkg is a power-law, we can use an inverse transform 
+        sampler which is faster.
 
-        t = linspace(xMin, xMax, 200.)
-        cdf = map(lambda x: quad(func,xMin,x)[0],t)
-        inv_cdf = interp1d(cdf,t)
+        '''
 
-        r =  uniform(min(cdf),max(cdf)-min(cdf))
-        return(inv_cdf(r))
+        indx = self.bkgIndex
+
+        #pick a random number
+        r =  uniform(0.,1.)
+
+        #For a power law, the inverse CDF is easy to calculate
+        energy = ((xMax**(indx+1)-xMin**(indx+1))*r + xMin**(indx+1))**(1./(indx+1))
+
+        return energy
         
 
 
@@ -199,7 +218,7 @@ class photonGen(object):
 
     def _IntegrateBkg(self):
 
-        self.bkgRate = quad(self._bkgSpec, self.emin,self.emax)[0]
+        self.bkgRate = quad(self._bkgSpec, self.emin,self.emax)[0]*self.areaFrac
 
 
     def _CreateBkgCurve(self):
@@ -209,7 +228,7 @@ class photonGen(object):
         self._homoGen(self.tStart, self.tStop, self.bkgRate)
 
         for ti in self.bkgTimes:
-            self.bkgEnergy.append(self._SamplerRej(self._bkgSpec,self._bkgSpec(self.emin),self.emin,self.emax))
+            self.bkgEnergy.append(self._SamplerInv(self.emin,self.emax))
 
             
     def GetLightCurve(self):

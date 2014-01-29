@@ -9,7 +9,7 @@ eboundDict = {'NAI_00': 'n0' ,'NAI_01': 'n1'  , 'NAI_02': 'n2'  , 'NAI_03': 'n3'
 
 class tteBuilder(object):
 
-    def __init__(self,fileName,evts,chans,det,simInfo):
+    def __init__(self,fileName,evts,chans,det,simInfo, default=''):
         
         self.fileName =fileName
         self.det = det
@@ -19,6 +19,7 @@ class tteBuilder(object):
         self.trigT = self.tz
         self.ebounds = npload(eboundDict[det]+'_ebounds.npy')
 
+        self.defaultRSP = default
 
         self._CreatePrimaryHeader()
         self._MakeEboundsEXT()
@@ -231,6 +232,7 @@ class tteBuilder(object):
         header["HDUCLAS1"] = 'GTI     '
         header["HDUVERS"] = '1.2.0'
         header["EXTVER"] = 1
+        header["EXTVER"] = self.defaultRSP
        
        # header["CHECKSUM"] = 'PZaEQWTCPWZCPWZC'
        # header["DATASUM"] = '         0'

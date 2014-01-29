@@ -4,6 +4,7 @@ from numpy import asarray, cumsum, abs, array
 from photonGen import photonGen
 from numba.random.random import uniform
 from tteBuilder import tteBuilder
+import sys
 
 class simBuilder(object):
   
@@ -69,8 +70,14 @@ class simBuilder(object):
 
 
        #Create the photon generators for each of the desired detectors
-       self.simDets = [photonGen(bkgStart,bkgStop,sourceStart,sourceStop,emin,emax)] * len(simDets)
-      
+       self.simDets =[]
+       for i in range(len(simDets)):
+          pg = photonGen(bkgStart,bkgStop,sourceStart,sourceStop,emin,emax)
+          self.simDets.append(pg)
+
+       for frac,sd in zip(self.fractionalAreaNai,self.simDets[1:]):
+
+           sd.SetAreaFraction(frac)
 
        self._GenerateBackgrounds()
 
@@ -104,10 +111,16 @@ class simBuilder(object):
 
         '''
         
-        rsps = glob(self.ext+"*"+self.bn+"*.rsp")
+        rsps = glob(self.ext+"*"+self.bn+"*.rsp*")
         
+        if len(rsps) != 14:
+            print "No detectors for "+self.bn
+            sys.exit()
+            return
 
         simRsps = []
+
+        self.simDetNames.sort()
 
         for sd in self.simDetNames:
             try:
@@ -115,24 +128,24 @@ class simBuilder(object):
             except IndexError:
                 pass
 
-        rsps = map(rsp,rsps)
+        
 
         self.simRsps = map(rsp,simRsps)
 
         
-        bgos = rsps[:2]
-        nais = rsps[2:]
+        bgos = self.simRsps[0]
+        nais = self.simRsps[1:]
 
         
 
-        totalAreaNai = asarray(map(lambda x: x.geoArea, nais)).sum()
-        print "Total NaI Area: %lf"%totalAreaNai
+        #totalAreaNai = asarray(map(lambda x: x.geoArea, nais)).sum()
+        #print "Total NaI Area: %lf"%totalAreaNai
         
-        totalAreaBgo = asarray(map(lambda x: x.geoArea, bgos)).sum()
-        print "Total BGO Area: %lf"%totalAreaBgo
+        #totalAreaBgo = asarray(map(lambda x: x.geoArea, bgos)).sum()
+        #print "Total BGO Area: %lf"%totalAreaBgo
 
 
-        fractionalAreaNai = map(lambda x: x.geoArea/totalAreaNai, nais)
+        self.fractionalAreaNai = map(lambda x: x.geoArea/bgos.geoArea, nais)
         
 
 
@@ -148,7 +161,7 @@ class simBuilder(object):
         for x in self.simDets:
 
             x.SetBkgParams(self.A,self.indx)
-        print "Background generated"
+        print "Backgrounda generated"
         
 
 
@@ -175,7 +188,7 @@ class simBuilder(object):
             
 
 
-            tte = tteBuilder(fn, evts, chans, y.det, self.simInfo)
+            tte = tteBuilder(fn, evts, chans, y.det, self.simInfo, y.fileName)
             
 
 
@@ -203,10 +216,11 @@ class simBuilder(object):
 		while pTot > 0:
 			r = uniform(0.,1.)
 			if r < pTot:
-				pCum = cumsum(normProb)
-				idx=(abs(pCum-r)).argmin() 
-				tCount.append(tag[0])	
-				eCount.append(idx)
+                            r2 = uniform(0.,1.)
+                            pCum = cumsum(normProb)
+                            idx=(abs(pCum-r2)).argmin() 
+                            tCount.append(tag[0])	
+                            eCount.append(idx)
 			pTot -= 1
 		
 	
