@@ -5,6 +5,11 @@ from math import log
 from numba.random.random import uniform
 from scipy.interpolate import interp1d
 
+import sampler
+import cython
+
+
+
 class photonGen(object):
 
     def __init__(self, bkgStart, bkgStop  ,sourceStart, sourceStop, emin, emax):
@@ -64,7 +69,7 @@ class photonGen(object):
         self.emax = emax
         self.areaFrac = 1.
 
-
+        self._evo2 = False
     
 
 
@@ -97,6 +102,17 @@ class photonGen(object):
         
 
         self._CreateBkgCurve()
+
+    def SetSecondaryEvolution(self,evo):
+        '''
+        In the case that the evolution function is weighted or hard to 
+        calculate, this allows for a secondary evolution to be set that
+        simpler to compute. 
+
+
+        '''
+        self._evo2 = evo
+
 
 
     def SetEvolution(self,evo):
@@ -134,6 +150,21 @@ class photonGen(object):
         
 
 
+
+    def _nonHomoGenCython(self, t0, tMax, fmax):
+
+        #First we make a class out of the integrated pulse
+        pulse = self._pulse
+
+        cython.inline('''
+        cdef class Pulse(sampler.Function):
+            cpdef evaluate(self, x):
+                return pulse(x)
+        ''')
+        self.sourceTimes = sampler.nonHomoGen(Pulse(),t0,tMax,fmax)
+
+
+
     def _nonHomoGen(self, t0, tMax, fmax):
         '''
         Non-homogeneous poisson process generator
@@ -154,6 +185,12 @@ class photonGen(object):
         self.sourceTimes = times
         print "There were %d photons generated.\nDistributing in energy"%len(self.sourceTimes)
         
+
+
+    def _homoGenCython(self, t0, tMax, rate):
+
+
+        self.bkgTimes = sampler.homoGen(t0,tMax,rate)
 
 
     def _homoGen(self, t0, tMax, rate):
@@ -184,6 +221,9 @@ class photonGen(object):
         
 
 
+    def _SamplerCython(self):
+        pass
+
 
     def _SamplerRej(self,func,fMax,xMin,xMax):
 
@@ -204,11 +244,19 @@ class photonGen(object):
         t = arange(self.sourceStart,self.sourceStop,.01)
         p = map(self._pulse,t)
         maxFlux = max(p)
+        print "Light curve integrated!"
 
-        self._nonHomoGen(self.sourceStart,self.sourceStop,maxFlux)
+        self._nonHomoGenCython(self.sourceStart,self.sourceStop,maxFlux)
         
+        if self._evo2:
+            evo = self._evo2
+            print "Secondary evolution function set!"
+
+        else:
+            evo = self._specEvo
+
         for ti in self.sourceTimes:
-            b= lambda en: self._specEvo(en,ti)
+            b= lambda en: evo(en,ti)
             self.srcEnergy.append(self._SamplerRej(b,b(self.emin),self.emin,self.emax))
 
     def _bkgSpec(self,ene):

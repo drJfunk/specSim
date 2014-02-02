@@ -9,7 +9,7 @@ import sys
 class simBuilder(object):
   
 
-    def __init__(self, bn, simDets, bkgTime, sourceTime, eneSpan, bkgParam, evo, ext=""):
+    def __init__(self, bn, simDets, evo, ext="",fNameExt ="" ,evo2=None):
        '''
        Builds a simulated burst based off of a certain set of
        RSPs. The entire set of RSPs must be present to determine 
@@ -40,60 +40,103 @@ class simBuilder(object):
      
 
        self.ext = ext #Used to set folder for holding the files
-
-       emin, emax = eneSpan
-
-       bkgStart, bkgStop = bkgTime
-       
-       sourceStart, sourceStop = sourceTime
-       
-
-       assert bkgStart < bkgStop, "Background times are reversed"
-       assert sourceStart < sourceStop, "Source times are reversed"
-       assert bkgStart < sourceStart, "Source starts before background"
-       assert bkgStop > sourceStop,  "Source ends before background"
-        
-       self.A, self.indx = bkgParam
-       
        self.bn = bn
-       
        self.simDetNames = simDets
-
-       self.simInfo = [sourceStart, bkgStart, bkgStop]
-
        self.evo = evo
+       self.fNameExt = fNameExt
+       self.evo2=evo2
 
+
+      
+           
         
-       self._ReadRSP()
-
-        
-
-
-       #Create the photon generators for each of the desired detectors
-       self.simDets =[]
-       for i in range(len(simDets)):
-          pg = photonGen(bkgStart,bkgStop,sourceStart,sourceStop,emin,emax)
-          self.simDets.append(pg)
-
-       for frac,sd in zip(self.fractionalAreaNai,self.simDets[1:]):
-
-           sd.SetAreaFraction(frac)
-
-       self._GenerateBackgrounds()
-
        
-       #Here I need a function that correct reduces the rate of the detectors based on their
-       #fraction geometric area. Not sure how to do this
-       
-       self._GenerateSignals()
-
-
-       self._CreateTTE()
     
 
 
+    def SetBkgParams(self, bkgParam):
+
+        self.A, self.indx = bkgParam
+        self.bkgParamSet  = True
+
+    def SetBkgTime(self, bkgTime):
+
+        self.bkgStart, self.bkgStop = bkgTime
+        self.bkgTimeSet = True
+
+    def SetSourceTime(self, sourceTime):
+
+        self.sourceStart, self.sourceStop = sourceTime
+        self.srcTimeSet = True
+
+
+
+    def SetEnergyRange(self, eneSpan):
         
+        self.emin, self.emax = eneSpan
+        self.eSpanSet = True
     
+
+    def Explode(self):
+        
+        if self.bkgTimeSet and self.srcTimeSet and self.bkgParamSet and self.eSpanSet:
+
+            assert self.bkgStart < self.bkgStop, "Background times are reversed"
+            assert self.sourceStart < self.sourceStop, "Source times are reversed"
+            assert self.bkgStart < self.sourceStart, "Source starts before background"
+            assert self.bkgStop > self.sourceStop,  "Source ends before background"
+
+
+            self.simInfo = [self.sourceStart, self.bkgStart, self.bkgStop]
+
+            self._ReadRSP()
+
+        
+
+
+             #Create the photon generators for each of the desired detectors
+            self.simDets =[]
+            for i in range(len(self.simDetNames)):
+                pg = photonGen(self.bkgStart,self.bkgStop,self.sourceStart,self.sourceStop,self.emin,self.emax)
+                self.simDets.append(pg)
+
+            for frac,sd in zip(self.fractionalAreaNai,self.simDets[1:]):
+
+                sd.SetAreaFraction(frac)
+
+            self._GenerateBackgrounds()
+
+
+            #Here I need a function that correct reduces the rate of the detectors based on their
+            #fraction geometric area. Not sure how to do this
+            #FIXED 29/1/2014
+
+
+
+            if self.evo2 != None:
+                for sd in self.simDets:
+                    sd.SetSecondaryEvolution(self.evo2)
+
+
+            self._GenerateSignals()
+
+
+            self._CreateTTE()
+
+
+        else:
+            print "--------> ERROR!!!"
+            if not self.bkgTimeSet:
+                print "No background times set!"
+
+            if not self.srcTimeSet:
+                print "No source times set!"
+            
+            if not self.bkgParamSet:
+                print "Background spectral parameters not set!"
+
+            if not self.eSpanSet:
+                print "Max and Min energies not set!"
 
 
 
@@ -111,14 +154,16 @@ class simBuilder(object):
 
         '''
         
-        rsps = glob(self.ext+"*"+self.bn+"*.rsp*")
+        rsps = glob(self.ext+"*"+self.bn+"*.rsp")
         
-        if len(rsps) != 14:
-            print "No detectors for "+self.bn
-            sys.exit()
-            return
+        #if len(rsps) != 14:
+        #    print "No detectors for "+self.bn
+        #    sys.exit()
+        #    return
 
         simRsps = []
+
+        
 
         self.simDetNames.sort()
 
@@ -184,7 +229,7 @@ class simBuilder(object):
             evts, chans = self._FoldTags(lc,y)
 
             
-            fn = self.ext+z+"_simTTE.fit"
+            fn = self.ext+z+self.fNameExt+"_simTTE.fit"
             
 
 

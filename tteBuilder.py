@@ -20,6 +20,8 @@ class tteBuilder(object):
         self.ebounds = npload(eboundDict[det]+'_ebounds.npy')
 
         self.defaultRSP = default
+        
+
 
         self._CreatePrimaryHeader()
         self._MakeEboundsEXT()
@@ -232,7 +234,7 @@ class tteBuilder(object):
         header["HDUCLAS1"] = 'GTI     '
         header["HDUVERS"] = '1.2.0'
         header["EXTVER"] = 1
-        header["EXTVER"] = self.defaultRSP
+        header["RESPFILE"] = self.defaultRSP
        
        # header["CHECKSUM"] = 'PZaEQWTCPWZCPWZC'
        # header["DATASUM"] = '         0'
