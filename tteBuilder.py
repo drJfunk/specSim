@@ -17,7 +17,7 @@ class tteBuilder(object):
         self.chans = chans
         self.tz, self.tStart, self.tStop = simInfo
         self.trigT = self.tz
-        self.ebounds = npload(eboundDict[det]+'_ebounds.npy')
+        self.ebounds = npload("/Users/jburgess/Research/specSim/"+eboundDict[det]+'_ebounds.npy')
 
         self.defaultRSP = default
         

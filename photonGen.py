@@ -1,18 +1,21 @@
 from scipy.stats import uniform
-from scipy.integrate import quad, quadrature
+from scipy.integrate import quad
 from numpy import linspace, arange, argsort, array
 from math import log
 from numba.random.random import uniform
-from scipy.interpolate import interp1d
+from Tkinter import *
+from progressBar import Meter
 
+import evo
 import sampler
+
 import cython
 
 
 
 class photonGen(object):
 
-    def __init__(self, bkgStart, bkgStop  ,sourceStart, sourceStop, emin, emax):
+    def __init__(self, bkgStart, bkgStop  ,sourceStart, sourceStop, emin=None, emax=None):
         '''
         This class creates an object that performs the task of 
         generating photons time for both a pulse and a background.
@@ -54,6 +57,8 @@ class photonGen(object):
         The result will be a list of time tags with photon energies
         that will be fed to the response code for calculating counts
 
+        UPDATE 2/2/2014: Heavily modified to implemenet Cython bindings
+        ADD MORE DETAIL
 
 
         '''
@@ -65,11 +70,14 @@ class photonGen(object):
         self.tStart = bkgStart
         self.sourceStart = sourceStart
         self.sourceStop = sourceStop
-        self.emin = emin
-        self.emax = emax
+        self.emin = evo.eMin
+        self.emax = evo.eMax
         self.areaFrac = 1.
 
         self._evo2 = False
+
+
+        
     
 
 
@@ -131,7 +139,6 @@ class photonGen(object):
         
         self._specEvo = evo
 
-
         self._CreateSourceCurve()
 
             
@@ -140,7 +147,7 @@ class photonGen(object):
     def _IntegratePulse(self):
         '''
         In order to have the correct number of photons in the lightcurve
-        the spectral evolution must be integrated of energy to get the 
+        the spectral evolutin must be integrated of energy to get the 
         total possion rate. This method implemenets that process.
 
         '''
@@ -151,17 +158,11 @@ class photonGen(object):
 
 
 
-    def _nonHomoGenCython(self, t0, tMax, fmax):
+    def _nonHomoGenCython(self, t0, tMax):
 
-        #First we make a class out of the integrated pulse
-        pulse = self._pulse
-
-        cython.inline('''
-        cdef class Pulse(sampler.Function):
-            cpdef evaluate(self, x):
-                return pulse(x)
-        ''')
-        self.sourceTimes = sampler.nonHomoGen(Pulse(),t0,tMax,fmax)
+        
+       
+        self.sourceTimes = sampler.nonHomoGen(t0,tMax,self.emin,self.emax,self.areaFrac)
 
 
 
@@ -221,9 +222,7 @@ class photonGen(object):
         
 
 
-    def _SamplerCython(self):
-        pass
-
+    
 
     def _SamplerRej(self,func,fMax,xMin,xMax):
 
@@ -239,25 +238,51 @@ class photonGen(object):
 
     def _CreateSourceCurve(self):
 
-        self._IntegratePulse()
 
-        t = arange(self.sourceStart,self.sourceStop,.01)
-        p = map(self._pulse,t)
-        maxFlux = max(p)
-        print "Light curve integrated!"
+        ##This has been modifed to implement cython 2/2/2014
+        #self._IntegratePulse()
 
-        self._nonHomoGenCython(self.sourceStart,self.sourceStop,maxFlux)
+        #t = arange(self.sourceStart,self.sourceStop,.01)
+        #p = map(self._pulse,t)
+        #maxFlux = max(p)
+        #print "Light curve integrated!"
+
+        self._nonHomoGenCython(self.sourceStart,self.sourceStop)
+
+        print "Generated %d photons from the source"%len(self.sourceTimes)
         
-        if self._evo2:
-            evo = self._evo2
-            print "Secondary evolution function set!"
+        #if self._evo2:
+        #    evo = self._evo2
+        #    print "Secondary evolution function set!"
 
-        else:
-            evo = self._specEvo
+        #else:
+        #    evo = self._specEvo
 
-        for ti in self.sourceTimes:
-            b= lambda en: evo(en,ti)
-            self.srcEnergy.append(self._SamplerRej(b,b(self.emin),self.emin,self.emax))
+
+        ### Progress Bar
+        root                 = Toplevel()
+        l2                    = Label(root,text='Total progress:')
+        l2.grid(row=2,column=0)
+        m2                    = Meter(root, 500,20,'grey','red',0,None,None,'white',relief='ridge', bd=3)
+        m2.grid(row=3,column=0)
+        m2.set(0.0,'Sampling started')
+   
+
+
+
+
+        print "Distributing source photons in energy"
+        for ti,i in zip(self.sourceTimes,xrange(len(self.sourceTimes))):
+            #b= lambda en: evo(en,ti)
+            #self.srcEnergy.append(self._SamplerRej(b,b(self.emin),self.emin,self.emax))
+            fMax = evo.evo(self.emin,ti)
+            self.srcEnergy.append(sampler.Sample(ti,fMax,self.emin,self.emax))
+            m2.set(float(i)/float(len(self.sourceTimes)))
+        
+        m2.set(1.0)
+        root.destroy()
+        print "Source created!"
+
 
     def _bkgSpec(self,ene):
 
@@ -274,9 +299,12 @@ class photonGen(object):
         self._IntegrateBkg()
 
         self._homoGen(self.tStart, self.tStop, self.bkgRate)
-
+        
+        print "Generated %d photons from the background"%len(self.bkgTimes)
+        print "Distributing background photons in energy"
         for ti in self.bkgTimes:
             self.bkgEnergy.append(self._SamplerInv(self.emin,self.emax))
+        print "Background created"
 
             
     def GetLightCurve(self):

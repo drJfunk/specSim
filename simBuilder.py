@@ -9,7 +9,7 @@ import sys
 class simBuilder(object):
   
 
-    def __init__(self, bn, simDets, evo, ext="",fNameExt ="" ,evo2=None):
+    def __init__(self, bn, simDets, ext="",fNameExt ="" ,evo2=None):
        '''
        Builds a simulated burst based off of a certain set of
        RSPs. The entire set of RSPs must be present to determine 
@@ -36,15 +36,20 @@ class simBuilder(object):
        evo: Function of time and energy desrcibing the spectral evolution
        
 
+       UPDATE 2/2/2014: Heavily modified photonGen to implement Cython
+
+
        '''
      
 
        self.ext = ext #Used to set folder for holding the files
        self.bn = bn
        self.simDetNames = simDets
-       self.evo = evo
+       self.evo = None
        self.fNameExt = fNameExt
        self.evo2=evo2
+
+       self.eSpanSet = True
 
 
       
@@ -97,7 +102,8 @@ class simBuilder(object):
              #Create the photon generators for each of the desired detectors
             self.simDets =[]
             for i in range(len(self.simDetNames)):
-                pg = photonGen(self.bkgStart,self.bkgStop,self.sourceStart,self.sourceStop,self.emin,self.emax)
+                #pg = photonGen(self.bkgStart,self.bkgStop,self.sourceStart,self.sourceStop,self.emin,self.emax)
+                pg = photonGen(self.bkgStart,self.bkgStop,self.sourceStart,self.sourceStop)
                 self.simDets.append(pg)
 
             for frac,sd in zip(self.fractionalAreaNai,self.simDets[1:]):
@@ -113,9 +119,9 @@ class simBuilder(object):
 
 
 
-            if self.evo2 != None:
-                for sd in self.simDets:
-                    sd.SetSecondaryEvolution(self.evo2)
+            #if self.evo2 != None:
+            #    for sd in self.simDets:
+            #        sd.SetSecondaryEvolution(self.evo2)
 
 
             self._GenerateSignals()
@@ -216,8 +222,8 @@ class simBuilder(object):
         '''
         for x in self.simDets:
 
-            x.SetEvolution(self.evo)
-
+            #x.SetEvolution(self.evo)
+            x._CreateSourceCurve()
         print "Signal generated"
 
 
