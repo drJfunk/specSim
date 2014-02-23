@@ -1,0 +1,46 @@
+(c) 30/1/2014 Dr. J. Michael Burgess
+
+Purpose: Simulate GBM TTE data via the GBM DRMs 
+Requirements: Astropy, Numpy, Numba, Scipy
+
+
+This tool kit allows for the simulation of GBM TTE data by folding a 
+an evolving spectral model throught the GBM DRMs. The spectral model
+is a user defined fucntion that returns a photon flux (phts/s/cm2) for
+given time (sec) and energy (keV).
+
+An example of the such a function:
+
+
+def evo(ene, t):
+
+    val = 10. * ene**(-2*t)
+
+    return val
+
+
+Here a power law in photon flux with a decaying power law index is defined
+by the user and will be convertered to GBM TTE data.
+
+The other user defined inputs to a simulation are the demonstrated and explianed:
+
+
+bkgTime = [-10.,20.]  The start and stop times of the simulated background
+
+sourceTime = [0.,16.] The start and stop times of the simulated source
+
+bkgParams = [300,-1.5] The amplitude and power law index of the background spectrum
+
+bn = "130427324" The GBM burst number corresponding the DRMs used for the simulation
+
+ext = "130427A/" Optionial extension for the DRMs to be read from and the TTE to be stored
+
+simDets = ["n6","na","b1"] The detectors to be simulated
+
+emin = 8. Minimum energy of the simulated spectrum
+
+emax = 50000. Maximum energy of the simulated spectrum
+
+
+Once these parameters are defined the must be set through the various Set() methods
+of the main class, simBuilder.
