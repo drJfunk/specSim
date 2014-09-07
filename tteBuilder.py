@@ -80,7 +80,7 @@ class tteBuilder(object):
 
         cols = pf.ColDefs([channel,emin,emax])
 
-        tbhdu=pf.new_table(cols,tbtype='BinTableHDU')
+        tbhdu=pf.from_columns(cols,tbtype='BinTableHDU')
         
         header=tbhdu.header
         header["EXTNAME"] = 'EBOUNDS '
@@ -136,7 +136,7 @@ class tteBuilder(object):
 
         cols = pf.ColDefs([time,pha])
 
-        tbhdu=pf.new_table(cols,tbtype='BinTableHDU')
+        tbhdu=pf.from_columns(cols,tbtype='BinTableHDU')
         
         header=tbhdu.header
         header["TZERO1"]=self.tz
@@ -197,7 +197,7 @@ class tteBuilder(object):
 
         cols = pf.ColDefs([tstart,tstop])
 
-        tbhdu=pf.new_table(cols,tbtype='BinTableHDU')
+        tbhdu=pf.from_columns(cols,tbtype='BinTableHDU')
         
         header=tbhdu.header
         header["EXTNAME"] = 'GTI     ' 
