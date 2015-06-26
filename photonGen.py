@@ -2,7 +2,9 @@ from scipy.stats import uniform
 from scipy.integrate import quad
 from numpy import linspace, arange, argsort, array
 from math import log
-from numba.random.random import uniform
+from RealBackGroundGenerator import RealBackGroundGenerator
+
+#from numba.random.random import uniform
 #from Tkinter import *
 #from progressBar import Meter
 
@@ -15,7 +17,7 @@ import cython
 
 class photonGen(object):
 
-    def __init__(self, bkgStart, bkgStop  ,sourceStart, sourceStop, emin=None, emax=None):
+    def __init__(self, bkgStart, bkgStop  ,sourceStart, sourceStop, emin=None, emax=None,noBkg=False):
         '''
         This class creates an object that performs the task of 
         generating photons time for both a pulse and a background.
@@ -63,7 +65,7 @@ class photonGen(object):
 
         '''
 
-
+        self.noBkg = noBkg
         self.srcEnergy = []
         self.bkgEnergy =[]
         self.tStop = bkgStop
@@ -147,22 +149,22 @@ class photonGen(object):
     def _IntegratePulse(self):
         '''
         In order to have the correct number of photons in the lightcurve
-        the spectral evolutin must be integrated of energy to get the 
+        the spectral evolution must be integrated of energy to get the 
         total possion rate. This method implemenets that process.
 
         '''
 
 
-        self._pulse = lambda t: quad(self._specEvo,self.emin,self.emax,args=(t))[0]*self.areaFrac
+        self._pulse = lambda t: quad(self._specEvo,self.emin,self.emax,args=(t,self._additionParams))[0]*self.areaFrac
         
 
 
 
     def _nonHomoGenCython(self, t0, tMax):
 
-        
+        print "Invoking Cython Non-Homogeneus Sampler"
        
-        self.sourceTimes = sampler.nonHomoGen(t0,tMax,self.emin,self.emax,self.areaFrac)
+        self.sourceTimes = sampler.nonHomoGen(t0,tMax,self.emin,self.emax,self.areaFrac,self._additionParams)
 
 
 
@@ -175,13 +177,16 @@ class photonGen(object):
 
         '''
 
+
+        print "Invoking python version of non-homo gen"
+
         t=t0
         times=[t0]
         while times[-1]<tMax:
         
-            t = t-(1/fmax)*log(uniform(0.,1.))
+            t = t-(1/fmax)*log(uniform.rvs(0.,1.))
         
-            if uniform(0.,1.) <= self._pulse(t)/fmax:
+            if uniform.rvs(0.,1.) <= self._pulse(t)/fmax:
                 times.append(t)
         self.sourceTimes = times
         print "There were %d photons generated.\nDistributing in energy"%len(self.sourceTimes)
@@ -193,12 +198,17 @@ class photonGen(object):
 
         self.bkgTimes = sampler.homoGen(t0,tMax,rate)
 
+    def _homoGenSourceCython(self, t0, tMax, rate):
+
+
+        return sampler.homoGen(t0,tMax,rate)
+
 
     def _homoGen(self, t0, tMax, rate):
         t=t0
         times=[t0]
         while times[-1]<tMax:
-            times.append(times[-1]-(1/rate)*log(uniform(0.,1.)))
+            times.append(times[-1]-(1/rate)*log(uniform.rvs(0.,1.)))
         
         self.bkgTimes =times
 
@@ -213,7 +223,7 @@ class photonGen(object):
         indx = self.bkgIndex
 
         #pick a random number
-        r =  uniform(0.,1.)
+        r =  uniform.rvs(0.,1.)
 
         #For a power law, the inverse CDF is easy to calculate
         energy = ((xMax**(indx+1)-xMin**(indx+1))*r + xMin**(indx+1))**(1./(indx+1))
@@ -222,15 +232,17 @@ class photonGen(object):
         
 
 
-    
+    def _SetParams(self, params):
+
+        self._additionParams = params
 
     def _SamplerRej(self,func,fMax,xMin,xMax):
 
         flag = True
         while flag:
-            energyGuess = uniform(xMin,xMax-xMin)
+            energyGuess = uniform.rvs(xMin,xMax-xMin)
 
-            if  uniform(0,fMax) <= func(energyGuess):
+            if  uniform.rvs(0,fMax) <= func(energyGuess):
                     flag = False
         
         return energyGuess
@@ -251,37 +263,18 @@ class photonGen(object):
 
         print "Generated %d photons from the source"%len(self.sourceTimes)
         
-        #if self._evo2:
-        #    evo = self._evo2
-        #    print "Secondary evolution function set!"
-
-        #else:
-        #    evo = self._specEvo
-
-
-        ### Progress Bar
-      #  root                 = Toplevel()
-      #  l2                    = Label(root,text='Total progress:')
-      #  l2.grid(row=2,column=0)
-      #  m2                    = Meter(root, 500,20,'grey','red',0,None,None,'white',relief='ridge', bd=3)
-      #  m2.grid(row=3,column=0)
-      #  m2.set(0.0,'Sampling started')
-   
-
-
 
 
         print "Distributing source photons in energy"
+####This is the non parallel version
         for ti,i in zip(self.sourceTimes,xrange(len(self.sourceTimes))):
-            #b= lambda en: evo(en,ti)
-            #self.srcEnergy.append(self._SamplerRej(b,b(self.emin),self.emin,self.emax))
-            fMax = evo.evo(self.emin,ti)
-            self.srcEnergy.append(sampler.Sample(ti,fMax,self.emin,self.emax))
-       #     m2.set(float(i)/float(len(self.sourceTimes)))
-        
-       # m2.set(1.0)
-       # root.destroy()
-        print "Source created!"
+
+            fMax = evo.evo(self.emin,ti,self._additionParams)
+            self.srcEnergy.append(sampler.Sample(ti,fMax,self.emin,self.emax,self._additionParams))
+
+
+            
+        print "Source created!\n\n"
 
 
     def _bkgSpec(self,ene):
@@ -291,19 +284,43 @@ class photonGen(object):
 
     def _IntegrateBkg(self):
 
-        self.bkgRate = quad(self._bkgSpec, self.emin,self.emax)[0]*self.areaFrac
 
+        if self.realBkg:
+            print
+            print "Getting bkg rate from BAK file"
+            self.bkgRate = self.bkgGen.GetTotalRate()
+        else:
+            self.bkgRate = quad(self._bkgSpec, self.emin,self.emax)[0]*self.areaFrac
+        #print self.bkgRate
+        #print self.areaFrac
 
+    def SetBakFile(self,bakFile):
+        self.realBkg = True
+
+        self.bkgGen = RealBackGroundGenerator(bakFile)
+        
     def _CreateBkgCurve(self):
 
+        if self.noBkg:
+            self.bkgTimes = []
+            self.bkgEnergy = []
+            print "No Background Created"
+            return
+        
+        
         self._IntegrateBkg()
 
         self._homoGen(self.tStart, self.tStop, self.bkgRate)
         
         print "Generated %d photons from the background"%len(self.bkgTimes)
         print "Distributing background photons in energy"
-        for ti in self.bkgTimes:
-            self.bkgEnergy.append(self._SamplerInv(self.emin,self.emax))
+
+        if self.realBkg:
+            self.bkgGen.generateChannels(len(self.bkgTimes))
+
+        else:
+            for ti in self.bkgTimes:
+                self.bkgEnergy.append(self._SamplerInv(self.emin,self.emax))
         print "Background created"
 
             
@@ -337,5 +354,6 @@ class photonGen(object):
 
         lc = array(zip(tags,ene))
 
-        return lc
         
+        
+        return lc

@@ -36,30 +36,30 @@ def MakeDiagRSP(rspFile):
 
     nChannels = len(eLO)
 
-    # Ideally, one would create the columns this way,
-    # but pyfits is fucking retarted at the moment and
-    # you have to do this in a special way because of the matrix.
-    # One day of my life gone away
-
     
-    # loSide = fits.Column(name='ENERG_LO', format='1E', unit='keV', array=eLO)
-    # hiSide = fits.Column(name='ENERG_HI', format='1E', unit='keV', array=eHI)
-    # ngrp = fits.Column(name='N_GRP', format='1I',  array=np.ones(nChannels))
-    # fchan = fits.Column(name='F_CHAN', format='PI', array=np.zeros(nChannels))
-    # nchan = fits.Column(name='N_CHAN', format='PI',  array=np.zeros(nChannels)+nChannels)
-    # drm = fits.Column(name='MATRIX', format='E', unit='cm**2', array=np.identity(nChannels))
+    loSide = fits.Column(name='ENERG_LO', format='1E', unit='keV', array=eLO)
+    hiSide = fits.Column(name='ENERG_HI', format='1E', unit='keV', array=eHI)
+    ngrp = fits.Column(name='N_GRP', format='1I',  array=np.ones(nChannels))
+    fchan = fits.Column(name='F_CHAN', format='PI', array= map(lambda x: [x], np.ones(nChannels) ))
+    nchan = fits.Column(name='N_CHAN', format='PI', array= map(lambda x: [x],  np.zeros(nChannels)+nChannels))
+    drm = fits.Column(name='MATRIX', format='PE',unit='cm**2', array=np.identity(nChannels))
    
 
-    # cols = fits.ColDefs([drm,loSide,hiSide,ngrp,fchan,nchan])
+    cols = fits.ColDefs([loSide,hiSide,ngrp,fchan,nchan,drm])
 
     # First construct a record array to hold all the info
-    tmp = []
-    for a,b,c,d,e,f in zip(eLO,eHI,np.ones(nChannels),np.zeros(nChannels),np.zeros(nChannels)+nChannels,np.identity(nChannels)):
-        tmp.append([a,b,c,d,e,f.tolist()])
+    #tmp = []
+    #for a,b,c,d,e,f in zip(eLO,eHI,np.ones(nChannels),np.zeros(nChannels),np.zeros(nChannels)+nChannels,np.identity(nChannels)):
+    #    tmp.append((a,b,c,[d],[e],f.tolist()))
 
-    data=np.rec.array(tmp,dtype=[('ENERG_LO', '>f4'), ('ENERG_HI', '>f4'), ('N_GRP', '>f4'), ('F_CHAN', '>f4'),('N_CHAN', '>f4'), ('MATRIX', '>f4', (nChannels, nChannels))])
+        
+    #data=np.rec.array(tmp,dtype=[('ENERG_LO', '>f4'), ('ENERG_HI', '>f4'), ('N_GRP', '>f4'),\
+    #                              ('F_CHAN', '>f4',(1,) ),('N_CHAN', '>f4',(1,) ),\
+    #                               ('MATRIX', '>f4', (nChannels, nChannels))])
 
-    tbhdu=fits.BinTableHDU.from_columns(data)    
+
+    # MUST USE Binary Table directly!
+    tbhdu=fits.BinTableHDU.from_columns(cols)    
     header=tbhdu.header
     #header["TZERO1"]=self.tz
     header["EXTNAME"] = 'SPECRESP MATRIX'
@@ -78,7 +78,7 @@ def MakeDiagRSP(rspFile):
 
     header["TSTART"] = mat.header["TSTART"]#self.tStart
     header["TSTOP"] = mat.header["TSTOP"]#self.tStop
-    #header["DATATYPE"] = 'TTE     '
+    header["DET_ANG"] = mat.header["DET_ANG"] # It is possible I should set this to zero
     header["TRIGTIME"] = mat.header["TRIGTIME"]#self.trigT
     header["DETCHANS"]  = nChannels
     header["NUMEBINS"]  = nChannels

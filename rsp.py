@@ -58,7 +58,11 @@ class rsp(object):
         for fcs,ncs,i in zip(mData["F_CHAN"] , mData["N_CHAN"]  ,range(self.numEnergyBins)):
             colIndx = 0
             for fc,nc in zip(fcs,ncs):
-
+                
+                #if fc == 0 and nc == self.numDetChans:
+                #    self.drm[i]=mData["MATRIX"][i]
+                #    print "Uncompressed"
+                #else:
                 self.drm[i,fc-1:fc+nc]=mData["MATRIX"][i][colIndx:colIndx+nc]
                 colIndx+=nc
         self.drm=matrix(self.drm)
@@ -89,12 +93,15 @@ class rsp(object):
             self.geoArea = geoArea
             self.prob = self.drm/geoArea
             # print "Det: %s, Beta: %.1f
-    def _FindNearestPhotonBin(self, e):
+    def _FindNearestPhotonBin(self, e,perf=False):
         ''' 
        	Take an energy (e) and find return the 
-	corresponding column from the DRM which 
-	has been normalised by the geometric area
-	'''
+        corresponding column from the DRM which 
+        has been normalised by the geometric area
+        '''
         
         idx=(abs(self.photonE[0]-e)).argmin()
-        return self.prob[idx,:]
+        if perf:
+            return self.drm[idx,:]
+        else:    
+            return self.prob[idx,:]
