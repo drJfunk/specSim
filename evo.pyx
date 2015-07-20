@@ -32,8 +32,8 @@ def pl(x,A,index):
 
 
 
-eMin = 4.5
-eMax = 2000.
+eMin = 7.5
+eMax = 40000.
 
 cdef float emin = eMin
 cdef float emax = eMax

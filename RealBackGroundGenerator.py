@@ -17,6 +17,7 @@ class RealBackGroundGenerator(object):
         bak = fits.open(bakFile)
         rate = bak["SPECTRUM"].data["RATE"]
 
+        #self.areaFrac = areaFrac
         self.totalRate = rate.sum()
         self.normRate  = rate/self.totalRate
         self.cumRate   = self.normRate.cumsum()
