@@ -65,6 +65,7 @@ class photonGen(object):
 
         '''
 
+        self.realBkg = False
         self.noBkg = noBkg
         self.srcEnergy = []
         self.bkgEnergy =[]

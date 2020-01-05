@@ -27,13 +27,13 @@ cpdef float PulseIntegrator(float t, float emin, float emax, params):
         
 
 @cython.cdivision(True)
-def cpl(x,A,index,xc):
-    return A * (x/100.)**(index)*np.exp(-x/xc)
+def pl(x,A,index):
+    return A * (x/300.)**(index)
 
 
 
-eMin = 5.
-eMax = 50000.
+eMin = 7.5
+eMax = 40000.
 
 cdef float emin = eMin
 cdef float emax = eMax
@@ -43,7 +43,7 @@ cdef float emax = eMax
 cpdef float evo(float ene, float t,p):
 
 
-      val = cpl(ene,p[0],p[1],p[2])
+      val = pl(ene,p[0],-2.)
       return val
 
 

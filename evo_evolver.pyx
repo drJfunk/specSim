@@ -5,6 +5,8 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 
+from evolver import Evolver
+
 from scipy.integrate import quad
 
 
@@ -27,24 +29,45 @@ cpdef float PulseIntegrator(float t, float emin, float emax, params):
         
 
 @cython.cdivision(True)
-def cpl(x,A,index,xc):
-    return A * (x/100.)**(index)*np.exp(-x/xc)
+cdef float  PL( float x, float A, float index):
+
+    
+    return A*pow(x/100.,index)
 
 
 
-eMin = 5.
+
+#minT = tStart.min()
+#maxT = tStop.max()
+
+
+
+eMin = 6.
 eMax = 50000.
 
 cdef float emin = eMin
 cdef float emax = eMax
-
+evol = Evolver()
 
 @cython.cdivision(True)
-cpdef float evo(float ene, float t,p):
+cpdef float evo(float ene, float t, p):
 
 
-      val = cpl(ene,p[0],p[1],p[2])
-      return val
+
+    cdef float val
+
+
+
+
+    evol.SetPulse(p[0],p[1],p[2],p[3])
+    evol.SetSpectralEvolution(p[4],p[5],p[6])
+    evol.SetSpectrum(p[7],p[8])
+
+    val = evol.IntegratedSpectrum(ene,p[9],p[10])
+
+    
+        
+    return val
 
 
 

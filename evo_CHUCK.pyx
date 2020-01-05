@@ -14,6 +14,10 @@ cdef extern from "math.h":
     float log(float)
 
 
+cdef extern from "/Users/jburgess/Research/specSim/physPulse.h":
+    float physPulse(float, float, float, float, float, float, float)
+
+
 
 
 
@@ -46,23 +50,22 @@ from scipy.interpolate import interp1d
 from numpy import logspace
 
 
-from peerModel.peerModel import peerModel
-
-
-pm = peerModel("/Users/jburgess/Research/specSim/lum0.1gamma100tau10epl0ee0.9eb1e-06ed0.1dtf500000.txt")
-pm.GenPhotonSpectrum(z=1.)
-
-
-
 
 
 
 @cython.cdivision(True)
 cpdef float evo(float ene, float t, p):
+
+
+    cdef float etaT = .1
+    cdef float etaR = 1.
+    cdef float etaW = .1
+
+    cdef float tf=2.
+    cdef float u0=1.E5
+
     
-    ##This is a time-independent sim 
-        
-    cdef float val = pm.PhotonSpectrum(ene)
+    cdef float val = physPulse(t,ene,tf,u0,etaT,etaR,etaW)
     
     return val
 

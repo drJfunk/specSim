@@ -1,4 +1,5 @@
 #Define the Band function
+from subPhotoInterp.subPhotoInterp import subPhotoInterp
 cimport cython
 
 from scipy.integrate import quad
@@ -45,24 +46,15 @@ cdef float emax = eMax
 from scipy.interpolate import interp1d
 from numpy import logspace
 
-
-from peerModel.peerModel import peerModel
-
-
-pm = peerModel("/Users/jburgess/Research/specSim/lum0.1gamma100tau10epl0ee0.9eb1e-06ed0.1dtf500000.txt")
-pm.GenPhotonSpectrum(z=1.)
-
-
-
-
+sub = subPhotoInterp("/Users/jburgess/Research/mnsf/mnSpecFit/models/TableModel_grid500_res8_Nr1.fits",silent=False)
 
 
 @cython.cdivision(True)
 cpdef float evo(float ene, float t, p):
     
     ##This is a time-independent sim 
-        
-    cdef float val = pm.PhotonSpectrum(ene)
+   
+    cdef float val = sub( ene, 2.,200.,50.,.4 )
     
     return val
 

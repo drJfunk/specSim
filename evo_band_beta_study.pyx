@@ -64,47 +64,35 @@ from scipy.interpolate import interp1d
 from numpy import logspace
 
 cdef float alpha = -1.
-cdef float beta = -2.2
-
-
-def pht(float Ep):
-    #cdef float emin = 8.
-    #cdef float emax = 50000.
-    cdef float val
-   
-    
-    b = lambda x: Band(x,1.,Ep,alpha,beta) 
-    
-    val = quad(b,emin,emax)[0]
-    
-    return val
+cdef float beta = -3.5
 
 
 
-        
-Ep = logspace(-1.,4.3010299956639813,1000)        
-   
-flux =[]
-
-for ep in Ep:
-    flux.append(pht(ep))
-    
-interpF = interp1d(Ep,flux)
 
 @cython.cdivision(True)
 cpdef float evo(float ene, float t):
     
         #cdef float alpha = -1.
         #cdef float beta = -2.2
-        cdef float indx = -2.5
-        cdef float Ep = 2000.* pow(1+t,indx)
-    
-        cdef float maxFlux = 10000.
-        #A = KRL(t,.5,.1, 2.,1.,maxFlux)
-        cdef float A= maxFlux*1.
-        cdef float renorm = interpF(Ep) #The interpolated Ep to flux ratio
         
-        cdef float val = Band(ene,A,Ep,alpha,beta)/renorm
+        cdef float Ep = 300.
+
+        #cdef float maxFlux = 6.51795*1.
+        #cdef float maxFlux = 6.51795*1.5444521
+        #cdef float maxFlux = 6.51795*2.3853323
+        #cdef float maxFlux = 6.51795*3.6840315
+        #cdef float maxFlux = 6.51795*5.6898102
+        #cdef float maxFlux = 6.51795*8.78763934
+        #cdef float maxFlux = 6.51795*13.57208808
+        #cdef float maxFlux = 6.51795*20.96144001
+        #cdef float maxFlux = 6.51795*32.37394014
+        cdef float maxFlux = 6.51795*50.
+        
+        
+        cdef float A= maxFlux*1.
+
+        
+        cdef float val = Band(ene,A,Ep,alpha,beta)
     
         return val
 
